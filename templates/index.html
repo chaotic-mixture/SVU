@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}首页 - SVU管理系统{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="jumbotron">
+                <h1 class="display-4">欢迎使用SVU管理系统</h1>
+                <p class="lead">这是一个强大的数据管理和分析平台，帮助您实时监控和管理各类资产数据。</p>
+                <hr class="my-4">
+                <p>立即开始使用我们的系统，体验高效的数据管理。</p>
+                <a class="btn btn-primary btn-lg" href="{{ url_for('dashboard') }}" role="button">进入仪表板</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-chart-line"></i> 实时数据</h5>
+                    <p class="card-text">实时监控各类资产的价格和市场数据，包括货币、加密货币、商品和股票。</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-database"></i> 数据管理</h5>
+                    <p class="card-text">轻松管理您的数据资产，支持添加、删除、更新和查询操作。</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-chart-bar"></i> 数据分析</h5>
+                    <p class="card-text">强大的数据分析功能，帮助您深入了解市场趋势和资产表现。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">系统特点</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><i class="fas fa-check text-success"></i> 支持多种资产类型</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success"></i> 实时数据更新</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success"></i> 自动数据验证</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success"></i> 批量操作支持</li>
+                        <li class="list-group-item"><i class="fas fa-check text-success"></i> 详细的数据分析</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

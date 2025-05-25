@@ -1,0 +1,77 @@
+# API配置
+api:
+  # IMF API配置
+  imf:
+    base_url: "http://dataservices.imf.org/REST/SDMX_JSON.svc"
+    timeout: 30
+    retry_attempts: 3
+    retry_delay: 5
+    
+  # CoinGecko API配置
+  coingecko:
+    base_url: "https://api.coingecko.com/api/v3"
+    timeout: 30
+    retry_attempts: 3
+    retry_delay: 5
+    
+  # Alpha Vantage API配置
+  alpha_vantage:
+    base_url: "https://www.alphavantage.co/query"
+    timeout: 30
+    retry_attempts: 3
+    retry_delay: 5
+    
+  # World Bank API配置
+  world_bank:
+    base_url: "http://api.worldbank.org/v2"
+    timeout: 30
+    retry_attempts: 3
+    retry_delay: 5
+
+# 数据处理配置
+data_processing:
+  # 价格数据处理
+  price:
+    min_price: 0.0
+    max_price: 1000000.0
+    max_gap: "7D"
+    base_item_id: 1  # 基准物品ID
+    normalization_window: "1D"
+    volatility_window: "30D"
+    correlation_window: "90D"
+    anomaly_threshold: 3.0
+    market_metrics_window: "1D"
+    trend_short_window: "20D"
+    trend_long_window: "50D"
+    
+  # 汇率数据处理
+  exchange_rate:
+    min_rate: 0.0
+    max_rate: 1000.0
+    max_gap: "1D"
+    consistency_threshold: 0.01
+    
+  # 数据验证
+  validation:
+    start_date: "2020-01-01"
+    end_date: "2023-12-31"
+    frequency: "1D"
+    min_confidence: 0.7
+    priority_sources:
+      - "imf"
+      - "world_bank"
+      
+  # 数据存储
+  storage:
+    raw_data_dir: "data/raw"
+    processed_data_dir: "data/processed"
+    backup_dir: "data/backup"
+    max_backup_files: 10
+    
+  # 日志配置
+  logging:
+    level: "INFO"
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    file: "logs/pipeline.log"
+    max_file_size: 10485760  # 10MB
+    backup_count: 5 
