@@ -1,1 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
 
+# IDE
+.vscode/
+.idea/
+
+# 数据库（含数据，体积大，不该入库）
+*.db
+*.sqlite3
