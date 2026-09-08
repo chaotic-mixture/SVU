@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>SVU v0.3 Daily Research Dashboard</title>
+<style>
+:root{--bg:#0b1220;--panel:#111c2f;--line:#2a3a53;--text:#e5edf7;--muted:#8fa3bd;--cyan:#41d9ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,sans-serif}
+main{max-width:1440px;margin:auto;padding:24px}
+.top{display:flex;justify-content:space-between;gap:16px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+h1{margin:4px 0;font-size:26px}
+.warning{margin:18px 0;padding:12px;border:1px solid #9a6b1e;background:#2b1d08;border-radius:8px;color:#ffd992}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.controls{height:max-content;position:sticky;top:14px;max-height:calc(100vh - 28px);overflow:auto}
+.group{margin:14px 0}
+.group h3{font-size:12px;color:var(--muted);margin:0 0 7px}
+.check{display:flex;gap:8px;margin:6px 0;align-items:flex-start}
+.check .meta{color:var(--muted);font-size:11px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+button,input{background:#17253b;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:6px}
+button{cursor:pointer}
+button:hover{border-color:var(--cyan)}
+input[type=range]{width:100%;padding:0}
+.chart{overflow:auto;background:#0e1829;border:1px solid var(--line);border-radius:8px;position:relative}
+.chart svg{min-width:800px;width:100%;height:auto;display:block}
+#tip{position:absolute;display:none;pointer-events:none;z-index:3;background:#111c2f;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:12px;max-width:300px;box-shadow:0 8px 24px #0008}
+#tip .d{color:var(--muted);margin-bottom:4px}
+#tip .row{display:flex;justify-content:space-between;gap:14px;line-height:1.45}
+#tip .row.hot{color:var(--cyan)}
+#tip .v{font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.legend span{font-size:12px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.range{display:grid;gap:8px}
+.foot{margin-top:16px;color:var(--muted);font-size:12px}
+.domain-link{display:inline-block;margin-top:8px;color:var(--cyan);text-decoration:none}.domain-link:hover{text-decoration:underline}
+@media(max-width:800px){main{padding:12px}.layout{grid-template-columns:1fr}.controls{position:static;max-height:none}}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <div>
+    <div class="muted" data-i18n="eyebrow">SVU 研究 / 日级 · 画法 041</div>
+    <h1 data-i18n="title">跨资产相对 SVU 日级趋势</h1>
+    <div class="muted"><span data-i18n="union">全部序列并集：</span><b id="dataEarliest"></b> <span data-i18n="to">至</span> <b id="dataLatest"></b> · <span data-i18n="selection">勾选只控制显示，ICATI 用合格货币全量加核心资产</span></div>
+    <a class="domain-link" href="domains/currency.html" data-i18n="domainLink">打开：货币领域相对视图 →</a>
+  </div>
+  <div class="muted"><span data-i18n="candidate">v0.3 研究候选 · 只读</span> <button id="language" type="button" aria-label="Switch language">EN</button></div>
+</div>
+<div class="warning" data-i18n="warning">研究工具，不是生产指数。长图用链式日收益：只对昨今都在场的资产计回报，新资产进入不把指数拉回 100，缺测不补。正式结论只看「正式窗口」。</div>
+<div class="layout">
+<aside class="panel controls">
+  <h2 data-i18n="window">计算窗口</h2>
+  <div class="group">
+    <h3 data-i18n="rules">绘图规则</h3>
+    <label class="check"><input type="radio" name="mode" value="long" checked> <span data-i18n="longMode">长图 · 在场重标（非正式）</span></label>
+    <label class="check"><input type="radio" name="mode" value="official"> <span data-i18n="officialMode">正式窗口 · 篮子齐全</span></label>
+    <label class="check"><input type="radio" name="mode" value="control"> <span data-i18n="controlMode">长历史对照篮 · 无道指/标普</span></label>
+  </div>
+  <div class="range">
+    <label><span data-i18n="start">开始计算</span> <input id="startDate" type="date"></label>
+    <input id="startSlider" type="range" min="0" max="1" value="0">
+    <label><span data-i18n="end">停止计算</span> <input id="endDate" type="date"></label>
+    <input id="endSlider" type="range" min="0" max="1" value="1">
+    <div class="muted small" id="windowLabel"></div>
+    <div class="muted small" id="axisLabel"></div>
+  </div>
+  <div class="actions group">
+    <button data-years="1" data-i18n="year1">近 1 年</button>
+    <button data-years="3" data-i18n="year3">近 3 年</button>
+    <button data-years="5" data-i18n="year5">近 5 年</button>
+    <button id="allHistory" data-i18n="allHistory">所选全部历史</button>
+  </div>
+  <div class="group">
+    <h3 data-i18n="display">显示</h3>
+    <div class="actions">
+      <button id="all" data-i18n="selectAll">全选</button>
+      <button id="none" data-i18n="clear">清空</button>
+      <button id="reset" data-i18n="reset">恢复默认</button>
+      <button id="currencies" data-i18n="currencies">全部货币</button>
+      <button id="assets" data-i18n="assets">全部资产</button>
+    </div>
+    <div id="toggles"></div>
+  </div>
+</aside>
+<section class="panel">
+  <div class="chart" id="chart">
+    <div id="tip"></div>
+  </div>
+  <div class="legend" id="legend"></div>
+</section>
+</div>
+<div class="foot" data-i18n="foot">正式窗口只使用篮子齐全的共同报价日；长图使用相邻两日均在场资产的链式收益。窗口改变时从开始日重算。没有报价的日期不补值。</div>
+</main>
+<script>
+const DATA = __PAYLOAD__;
+const I18N = {zh:{eyebrow:"SVU 研究 / 日级 · 画法 041",title:"跨资产相对 SVU 日级趋势",union:"全部序列并集：",to:"至",selection:"勾选只控制显示，ICATI 用合格货币全量加核心资产",domainLink:"打开：货币领域相对视图 →",candidate:"v0.3 研究候选 · 只读",warning:"研究工具，不是生产指数。长图用链式日收益：只对昨今都在场的资产计回报，新资产进入不把指数拉回 100，缺测不补。正式结论只看「正式窗口」。",window:"计算窗口",rules:"绘图规则",longMode:"长图 · 在场重标（非正式）",officialMode:"正式窗口 · 篮子齐全",controlMode:"长历史对照篮 · 无道指/标普",start:"开始计算",end:"停止计算",year1:"近 1 年",year3:"近 3 年",year5:"近 5 年",allHistory:"所选全部历史",display:"显示",selectAll:"全选",clear:"清空",reset:"恢复默认",currencies:"全部货币",assets:"全部资产",foot:"正式窗口只使用篮子齐全的共同报价日；长图使用相邻两日均在场资产的链式收益。窗口改变时从开始日重算。没有报价的日期不补值。",axis:"显示可拉区间：",official:"正式齐全窗口",present:"在场",days:"日",empty:"所选窗口没有共同报价日",recalculate:"起重新计算",missing:"缺测不补"},en:{eyebrow:"SVU Research / Daily · Build 041",title:"Cross-asset relative SVU daily trends",union:"All-series union:",to:"to",selection:"Selections control display only; ICATI uses eligible currencies and core assets.",domainLink:"Open: currency relative view →",candidate:"v0.3 research candidate · read-only",warning:"Research tool, not a production index. The long chart chains daily returns only for assets present on both dates; entering assets do not reset the index to 100 and missing data are not filled. Formal conclusions use the official window only.",window:"Calculation window",rules:"Plot rules",longMode:"Long chart · present-asset rebasing (non-formal)",officialMode:"Official window · complete basket",controlMode:"Long-history control basket · excluding DJIA/S&P",start:"Start",end:"End",year1:"Last 1 year",year3:"Last 3 years",year5:"Last 5 years",allHistory:"All selected history",display:"Display",selectAll:"Select all",clear:"Clear",reset:"Reset defaults",currencies:"All currencies",assets:"All assets",foot:"The official window uses common quoted dates with a complete basket. The long chart chains returns of assets present on adjacent dates. Changing the window rebases at its start. Missing dates are not filled.",axis:"Selectable range:",official:"official complete window",present:"present",days:"days",empty:"No common quoted dates in the selected window",recalculate:"recalculated from",missing:"missing data not filled"}};
+let language = localStorage.getItem("svu-language") === "en" ? "en" : "zh";
+function t(key){return I18N[language][key] || key}
+function applyLanguage(){document.documentElement.lang=language === "en" ? "en" : "zh-CN";document.querySelectorAll("[data-i18n]").forEach(el=>el.textContent=t(el.dataset.i18n));document.getElementById("language").textContent=language === "en" ? "ZH" : "EN";renderToggles();applyAxisBounds(true);setWindow(startIdx,endIdx)}
+let PLOT = null;
+const colors = ["#41d9ff","#7dffb3","#ffd166","#ff6b6b","#c77dff","#4cc9f0","#f72585","#80ed99","#f4a261","#e9c46a","#90e0ef","#bde0fe","#ffb4a2","#b8f2e6","#f2cc8f"];
+const visible = new Set(DATA.default);
+let startIdx = 0;
+let endIdx = DATA.dates.length - 1;
+
+let plotMode = DATA.default_mode || "long";
+
+function labelOf(name){ return (language === "en" ? DATA.labels_en : DATA.labels)[name] || name; }
+function colorOf(i){ return colors[i % colors.length]; }
+function parseDay(s){ return new Date(s + "T00:00:00"); }
+function isPrice(name){ return Object.prototype.hasOwnProperty.call(DATA.prices, name); }
+function priceAssets(){ return Object.keys(DATA.prices); }
+
+function axisAssets(){
+  const out = [];
+  for (const name of visible){
+    if (isPrice(name)) out.push(name);
+  }
+  return out;
+}
+
+function calcAssets(){
+  const list = plotMode === "control" ? (DATA.control_assets || []) : (DATA.official_assets || priceAssets());
+  return list.filter(isPrice);
+}
+
+function calcGroups(){
+  return plotMode === "control" ? (DATA.control_groups || DATA.groups) : DATA.groups;
+}
+
+function icatiAssets(){
+  return calcAssets();
+}
+
+function windowAssets(){
+  const vis = axisAssets();
+  if (vis.length) return vis;
+  return calcAssets();
+}
+
+function nearestIndex(day){
+  const t = parseDay(day).getTime();
+  let best = 0, dist = Infinity;
+  for (let i = 0; i < DATA.dates.length; i++){
+    const d = Math.abs(parseDay(DATA.dates[i]).getTime() - t);
+    if (d < dist){ dist = d; best = i; }
+  }
+  return best;
+}
+
+function coverageRange(assets){
+  if (plotMode === "official" && DATA.complete_start && DATA.complete_end){
+    return [nearestIndex(DATA.complete_start), nearestIndex(DATA.complete_end)];
+  }
+  const use = assets && assets.length ? assets : calcAssets();
+  if (!use.length){
+    return [0, DATA.dates.length - 1];
+  }
+  let lo = Infinity, hi = -1;
+  for (const a of use){
+    const cov = DATA.coverage[a];
+    if (!cov) continue;
+    lo = Math.min(lo, nearestIndex(cov.start));
+    hi = Math.max(hi, nearestIndex(cov.end));
+  }
+  if (!isFinite(lo) || hi < 0) return [0, DATA.dates.length - 1];
+  return [lo, hi];
+}
+
+function applyAxisBounds(keepWindow){
+  const [lo, hi] = coverageRange(windowAssets());
+  const startEl = document.getElementById("startSlider");
+  const endEl = document.getElementById("endSlider");
+  startEl.min = lo; startEl.max = hi;
+  endEl.min = lo; endEl.max = hi;
+  document.getElementById("startDate").min = DATA.dates[lo];
+  document.getElementById("startDate").max = DATA.dates[hi];
+  document.getElementById("endDate").min = DATA.dates[lo];
+  document.getElementById("endDate").max = DATA.dates[hi];
+  document.getElementById("axisLabel").textContent =
+    t("axis") + DATA.dates[lo] + " " + t("to") + " " + DATA.dates[hi] + (plotMode === "official" ? " · " + t("official") : " · " + t("missing"));
+  if (!keepWindow){
+    startIdx = lo; endIdx = hi;
+  } else {
+    if (startIdx < lo) startIdx = lo;
+    if (endIdx > hi) endIdx = hi;
+    if (endIdx - startIdx < 1) endIdx = Math.min(hi, startIdx + 1);
+  }
+}
+
+function setWindow(a, b){
+  const [lo, hi] = coverageRange(windowAssets());
+  startIdx = Math.max(lo, Math.min(a, hi));
+  endIdx = Math.max(lo, Math.min(b, hi));
+  if (endIdx - startIdx < 1) endIdx = Math.min(hi, startIdx + 1);
+  document.getElementById("startSlider").value = startIdx;
+  document.getElementById("endSlider").value = endIdx;
+  document.getElementById("startDate").value = DATA.dates[startIdx];
+  document.getElementById("endDate").value = DATA.dates[endIdx];
+  document.getElementById("windowLabel").textContent =
+    DATA.dates[startIdx] + " → " + DATA.dates[endIdx] + " · " + DATA.dates[startIdx] + " " + t("recalculate");
+  requestDraw();
+}
+
+let drawTimer = null;
+function requestDraw(){
+  clearTimeout(drawTimer);
+  drawTimer = setTimeout(draw, 50);
+}
+
+function yearsBack(n){
+  const [, hi] = coverageRange(windowAssets());
+  const end = parseDay(DATA.dates[hi]);
+  const start = new Date(end);
+  start.setFullYear(start.getFullYear() - n);
+  setWindow(nearestIndex(start.toISOString().slice(0,10)), hi);
+}
+
+function p0Map(assets, i0, i1){
+  const out = {};
+  for (const a of assets){
+    for (let i = i0; i <= i1; i++){
+      const v = DATA.prices[a][i];
+      if (v != null){ out[a] = v; break; }
+    }
+  }
+  return out;
+}
+
+function icatiCB(assets, i, p0){
+  const present = {};
+  for (const [g, mem] of Object.entries(calcGroups())){
+    const xs = mem.filter(a => assets.includes(a) && p0[a] != null && DATA.prices[a][i] != null);
+    if (xs.length) present[g] = xs;
+  }
+  const gcount = Object.keys(present).length;
+  if (!gcount) return null;
+  let s = 0;
+  for (const xs of Object.values(present)){
+    const w = 1 / (gcount * xs.length);
+    for (const a of xs) s += w * Math.log(DATA.prices[a][i] / p0[a]);
+  }
+  return 100 * Math.exp(s);
+}
+
+function icatiEW(assets, i, p0){
+  const xs = assets.filter(a => p0[a] != null && DATA.prices[a][i] != null);
+  if (!xs.length) return null;
+  const w = 1 / xs.length;
+  let s = 0;
+  for (const a of xs) s += w * Math.log(DATA.prices[a][i] / p0[a]);
+  return 100 * Math.exp(s);
+}
+
+function plotIndices(assets, i0, i1){
+  const idx = [];
+  if (!assets.length) return idx;
+  for (let i = i0; i <= i1; i++){
+    if (plotMode === "official"){
+      if (assets.every(a => DATA.prices[a][i] != null)) idx.push(i);
+    } else if (assets.some(a => DATA.prices[a][i] != null)) idx.push(i);
+  }
+  return idx;
+}
+
+function thin(idx, maxN){
+  if (idx.length <= maxN) return idx;
+  const out = [];
+  const step = (idx.length - 1) / (maxN - 1);
+  for (let i = 0; i < maxN; i++) out.push(idx[Math.round(i * step)]);
+  out[0] = idx[0];
+  out[out.length - 1] = idx[idx.length - 1];
+  return out;
+}
+
+function chainLevel(calc, idx, kind){
+  const out = new Array(idx.length).fill(null);
+  let level = 100;
+  let started = false;
+  const groups = calcGroups();
+  for (let k = 0; k < idx.length; k++){
+    const i = idx[k];
+    if (!started){
+      if (calc.some(a => DATA.prices[a][i] != null)){
+        out[k] = 100;
+        started = true;
+      }
+      continue;
+    }
+    const iPrev = idx[k - 1];
+    const overlap = calc.filter(a => DATA.prices[a][i] != null && DATA.prices[a][iPrev] != null);
+    if (!overlap.length){
+      out[k] = level;
+      continue;
+    }
+    let r = 0;
+    if (kind === "cb"){
+      const present = {};
+      for (const [g, mem] of Object.entries(groups)){
+        const xs = mem.filter(a => overlap.indexOf(a) !== -1);
+        if (xs.length) present[g] = xs;
+      }
+      const gcount = Object.keys(present).length;
+      if (!gcount){ out[k] = level; continue; }
+      for (const xs of Object.values(present)){
+        const w = 1 / (gcount * xs.length);
+        for (const a of xs) r += w * Math.log(DATA.prices[a][i] / DATA.prices[a][iPrev]);
+      }
+    } else {
+      const w = 1 / overlap.length;
+      for (const a of overlap) r += w * Math.log(DATA.prices[a][i] / DATA.prices[a][iPrev]);
+    }
+    level *= Math.exp(r);
+    out[k] = isFinite(level) ? level : null;
+  }
+  return out;
+}
+
+function rebase(){
+  const calc = icatiAssets();
+  const full = plotIndices(calc, startIdx, endIdx);
+  let icbFull, iewFull;
+  const p0off = {};
+  if (plotMode === "official"){
+    if (full.length){
+      const first = full[0];
+      for (const a of calc){
+        if (DATA.prices[a][first] != null) p0off[a] = DATA.prices[a][first];
+      }
+    }
+    icbFull = full.map(i => icatiCB(calc, i, p0off));
+    iewFull = full.map(i => icatiEW(calc, i, p0off));
+  } else {
+    icbFull = chainLevel(calc, full, "cb");
+    iewFull = chainLevel(calc, full, "ew");
+  }
+  const keep = thin(full.map((_, k) => k), 1500);
+  const idx = keep.map(k => full[k]);
+  const icb = keep.map(k => icbFull[k]);
+  const iew = keep.map(k => iewFull[k]);
+  const dates = idx.map(i => DATA.dates[i]);
+  const n = dates.length;
+  const p0 = {};
+  const icbAtFirst = {};
+  for (const a of priceAssets()){
+    for (let j = 0; j < n; j++){
+      if (DATA.prices[a][idx[j]] != null && icb[j] != null){
+        p0[a] = DATA.prices[a][idx[j]];
+        icbAtFirst[a] = icb[j];
+        break;
+      }
+    }
+  }
+  let icb0 = null, iew0 = null;
+  for (const v of icb){ if (v != null){ icb0 = v; break; } }
+  for (const v of iew){ if (v != null){ iew0 = v; break; } }
+  const series = {};
+  series.SVU = Array(n).fill(100);
+  series["ICATI-CB"] = icb.slice();
+  series["ICATI-EW"] = iew.slice();
+  series.USD = icb.map(v => (v == null || icb0 == null) ? null : 100 / (v / icb0));
+  for (const a of priceAssets()){
+    const base = p0[a];
+    const den0 = icbAtFirst[a];
+    series[a] = [];
+    for (let i = 0; i < n; i++){
+      const px = DATA.prices[a][idx[i]];
+      const den = icb[i];
+      series[a].push((base == null || px == null || den == null || den0 == null) ? null : 100 * (px / base) / (den / den0));
+    }
+  }
+  for (const [g, members] of Object.entries(calcGroups())){
+    const xs = members.filter(isPrice);
+    const gFull = plotMode === "official"
+      ? full.map(i => icatiEW(xs, i, p0off))
+      : chainLevel(xs, full, "ew");
+    const gSeries = keep.map(k => gFull[k]);
+    let v0 = null, d0 = null;
+    for (let j = 0; j < n; j++){
+      if (gSeries[j] != null && icb[j] != null){ v0 = gSeries[j]; d0 = icb[j]; break; }
+    }
+    series[g + " baseline"] = [];
+    for (let i = 0; i < n; i++){
+      const v = gSeries[i];
+      const den = icb[i];
+      series[g + " baseline"].push((v == null || den == null || v0 == null || d0 == null) ? null : 100 * (v / v0) / (den / d0));
+    }
+  }
+  return { dates, series, srcIdx: idx };
+}
+
+function pathOf(values, x, y){
+  let d = "";
+  let drawing = false;
+  values.forEach((v, i) => {
+    if (v == null || !isFinite(v)){ drawing = false; return; }
+    d += (drawing ? "L" : "M") + x(i) + " " + y(v);
+    drawing = true;
+  });
+  return d;
+}
+
+function percentile(arr, p){
+  if (!arr.length) return 100;
+  const a = arr.slice().sort((x,y) => x - y);
+  const i = (a.length - 1) * p;
+  const lo = Math.floor(i), hi = Math.ceil(i);
+  if (lo === hi) return a[lo];
+  return a[lo] + (a[hi] - a[lo]) * (i - lo);
+}
+
+function niceTicks(min, max, count){
+  if (!isFinite(min) || !isFinite(max) || !(max > min)) return [80, 100, 120];
+  const span = max - min;
+  const raw = span / Math.max(count - 1, 1);
+  if (!(raw > 0) || !isFinite(raw)) return [min, max];
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = norm >= 7.5 ? 10 * mag : norm >= 3.5 ? 5 * mag : norm >= 1.5 ? 2 * mag : mag;
+  if (!(step > 0) || !isFinite(step)) return [min, max];
+  const start = Math.ceil(min / step) * step;
+  const ticks = [];
+  for (let v = start, n = 0; v <= max + step * 1e-9 && n < 40; v += step, n++) ticks.push(v);
+  return ticks.length ? ticks : [min, max];
+}
+
+function timeTicks(dates){
+  if (!dates.length) return [];
+  const spanDays = (parseDay(dates[dates.length - 1]) - parseDay(dates[0])) / 86400000;
+  const out = [];
+  let prev = "";
+  if (spanDays > 800){
+    dates.forEach((d, i) => {
+      const k = d.slice(0, 4);
+      if (k !== prev){ out.push({i, label: k}); prev = k; }
+    });
+  } else if (spanDays > 90){
+    dates.forEach((d, i) => {
+      const k = d.slice(0, 7);
+      if (k !== prev){ out.push({i, label: k}); prev = k; }
+    });
+  } else if (spanDays > 21){
+    dates.forEach((d, i) => {
+      if (i === 0 || i === dates.length - 1 || i % 5 === 0) out.push({i, label: d.slice(5)});
+    });
+  } else {
+    dates.forEach((d, i) => out.push({i, label: d.slice(5)}));
+  }
+  if (out.length > 12){
+    const k = Math.ceil(out.length / 10);
+    const filtered = out.filter((_, j) => j % k === 0);
+    if (filtered[filtered.length - 1].i !== dates.length - 1) filtered.push(out[out.length - 1]);
+    return filtered;
+  }
+  return out;
+}
+
+function draw(){
+  const { dates, series, srcIdx } = rebase();
+  const names = Object.keys(series).filter(k => visible.has(k));
+  if (!dates.length){
+    const box = document.getElementById("chart");
+    box.querySelectorAll('svg, .empty-message').forEach(node => node.remove());
+    const p = document.createElement("p");
+    p.className = "muted empty-message";
+    p.textContent = t("empty");
+    box.appendChild(p);
+    PLOT = null;
+    document.getElementById('legend').replaceChildren();
+    const tip = document.getElementById("tip");
+    if (tip) tip.style.display = "none";
+    return;
+  }
+  const w = 1100, h = 560, pad = {l:58, r:18, t:18, b:48};
+  const vals = [];
+  for (const name of names){
+    for (const v of series[name]){
+      if (v == null || !isFinite(v)) continue;
+      vals.push(v);
+    }
+  }
+  let ymin = Math.min(100, percentile(vals, 0.02));
+  let ymax = Math.max(100, percentile(vals, 0.98));
+  if (!(ymax > ymin)){ ymin = 80; ymax = 120; }
+  const padv = (ymax - ymin) * 0.08;
+  ymin -= padv; ymax += padv;
+  const x = i => pad.l + (i / Math.max(dates.length - 1, 1)) * (w - pad.l - pad.r);
+  const y = v => pad.t + (1 - (v - ymin) / (ymax - ymin)) * (h - pad.t - pad.b);
+  const yTicks = niceTicks(ymin, ymax, 7);
+  let grid = `<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${h-pad.b}" stroke="#2a3a53"/>`;
+  grid += `<line x1="${pad.l}" y1="${h-pad.b}" x2="${w-pad.r}" y2="${h-pad.b}" stroke="#2a3a53"/>`;
+  yTicks.forEach(v => {
+    const yy = y(v);
+    grid += `<line x1="${pad.l}" y1="${yy}" x2="${w-pad.r}" y2="${yy}" stroke="#1c2a40"/>`;
+    grid += `<text x="${pad.l - 8}" y="${yy + 4}" fill="#8fa3bd" font-size="11" text-anchor="end">${v.toFixed(v >= 100 || v <= -10 ? 0 : 1)}</text>`;
+  });
+  if (ymin < 100 && ymax > 100){
+    grid += `<line x1="${pad.l}" y1="${y(100)}" x2="${w-pad.r}" y2="${y(100)}" stroke="#41d9ff" stroke-dasharray="4 4" stroke-width="1.2"/>`;
+  }
+  timeTicks(dates).forEach(t => {
+    grid += `<line x1="${x(t.i)}" y1="${h-pad.b}" x2="${x(t.i)}" y2="${h-pad.b + 5}" stroke="#8fa3bd"/>`;
+    grid += `<text x="${x(t.i)}" y="${h-18}" fill="#8fa3bd" font-size="11" text-anchor="middle">${t.label}</text>`;
+  });
+  let paths = "";
+  names.forEach((name, i) => {
+    const d = pathOf(series[name], x, y);
+    if (!d) return;
+    const width = name === "SVU" ? 2.2 : 1.45;
+    const dash = name === "SVU" ? ` stroke-dasharray="6 4"` : "";
+    paths += `<path d="${d}" fill="none" stroke="${colorOf(i)}" stroke-width="${width}"${dash}/>`;
+  });
+  const box = document.getElementById("chart");
+  box.querySelectorAll('.empty-message').forEach(node => node.remove());
+  box.querySelectorAll("svg").forEach(s => s.remove());
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.setAttribute("preserveAspectRatio", "xMinYMid meet");
+  // Numeric grid/paths only; no user HTML.
+  svg.innerHTML = `${grid}${paths}<line id="hair" x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${h-pad.b}" stroke="#41d9ff" opacity="0"/>`;
+  const tip = document.getElementById("tip");
+  box.insertBefore(svg, tip);
+  PLOT = {dates, series, names, x, y, pad, w, h, srcIdx, calc: icatiAssets()};
+  const legend = document.getElementById("legend");
+  legend.textContent = "";
+  names.forEach((name, i) => {
+    const span = document.createElement("span");
+    const dot = document.createElement("i");
+    dot.className = "dot";
+    dot.style.background = colorOf(i);
+    span.appendChild(dot);
+    span.appendChild(document.createTextNode(labelOf(name)));
+    legend.appendChild(span);
+  });
+}
+
+function fmtVal(v){
+  if (v == null || !isFinite(v)) return "—";
+  return Math.abs(v) >= 100 ? v.toFixed(2) : v.toFixed(4);
+}
+
+function onPlotMove(ev){
+  if (!PLOT) return;
+  const svg = document.querySelector("#chart svg");
+  const tip = document.getElementById("tip");
+  const hair = document.getElementById("hair");
+  if (!svg || !tip) return;
+  const rect = svg.getBoundingClientRect();
+  const mx = (ev.clientX - rect.left) / rect.width * PLOT.w;
+  const my = (ev.clientY - rect.top) / rect.height * 560;
+  const n = PLOT.dates.length;
+  const i = Math.round((mx - PLOT.pad.l) / (PLOT.w - PLOT.pad.l - PLOT.pad.r) * Math.max(n - 1, 1));
+  if (i < 0 || i >= n){
+    tip.style.display = "none";
+    if (hair) hair.setAttribute("opacity", "0");
+    return;
+  }
+  const xpx = PLOT.x(i);
+  if (hair){
+    hair.setAttribute("x1", xpx);
+    hair.setAttribute("x2", xpx);
+    hair.setAttribute("opacity", "0.75");
+  }
+  let hot = null, hotDist = 16;
+  const rows = [];
+  PLOT.names.forEach(name => {
+    const v = PLOT.series[name][i];
+    if (v == null || !isFinite(v)) return;
+    rows.push({name, v});
+    const dy = Math.abs(PLOT.y(v) - my);
+    if (dy < hotDist){ hotDist = dy; hot = name; }
+  });
+  if (!rows.length){
+    tip.style.display = "none";
+    return;
+  }
+  tip.replaceChildren();
+  const d = document.createElement("div");
+  d.className = "d";
+  d.textContent = PLOT.dates[i];
+  if (PLOT.srcIdx && PLOT.calc){
+    const src = PLOT.srcIdx[i];
+    const here = PLOT.calc.filter(a => DATA.prices[a][src] != null).length;
+    d.textContent = PLOT.dates[i] + " · " + t("present") + " " + here + "/" + PLOT.calc.length;
+  }
+  tip.appendChild(d);
+  rows.forEach(r => {
+    const row = document.createElement("div");
+    row.className = r.name === hot ? "row hot" : "row";
+    const lab = document.createElement("span");
+    lab.textContent = labelOf(r.name);
+    const val = document.createElement("span");
+    val.className = "v";
+    val.textContent = fmtVal(r.v);
+    row.appendChild(lab);
+    row.appendChild(val);
+    tip.appendChild(row);
+  });
+  tip.style.display = "block";
+  const box = document.getElementById("chart").getBoundingClientRect();
+  let left = ev.clientX - box.left + 14;
+  let top = ev.clientY - box.top + 14;
+  if (left + 240 > box.width) left = ev.clientX - box.left - 250;
+  if (top + 180 > box.height) top = ev.clientY - box.top - 90;
+  tip.style.left = left + "px";
+  tip.style.top = top + "px";
+}
+
+function onPlotLeave(){
+  const tip = document.getElementById("tip");
+  const hair = document.getElementById("hair");
+  if (tip) tip.style.display = "none";
+  if (hair) hair.setAttribute("opacity", "0");
+}
+
+function addCheck(box, name){
+  const row = document.createElement("label");
+  row.className = "check";
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = visible.has(name);
+  const text = document.createElement("span");
+  const title = document.createElement("div");
+  title.textContent = labelOf(name);
+  text.appendChild(title);
+  const cov = DATA.coverage[name];
+  if (cov){
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = cov.start + " ~ " + cov.end + " · " + cov.n + " " + t("days");
+    text.appendChild(meta);
+  }
+  input.addEventListener("change", ev => {
+    if (ev.target.checked) visible.add(name); else visible.delete(name);
+    applyAxisBounds(true);
+    setWindow(startIdx, endIdx);
+  });
+  row.appendChild(input);
+  row.appendChild(text);
+  box.appendChild(row);
+}
+
+function renderToggles(){
+  const box = document.getElementById("toggles");
+  box.textContent = "";
+  const order = ["baseline", "currency", "energy", "monetary_hedge", "equity_index"];
+  const grouped = { baseline: ["SVU", "ICATI-CB", "ICATI-EW"] };
+  for (const g of ["currency", "energy", "monetary_hedge", "equity_index"]){
+    grouped[g] = [];
+    if (g === "currency") grouped[g].push("USD");
+    grouped[g].push(g + " baseline");
+    (DATA.groups[g] || []).forEach(a => grouped[g].push(a));
+  }
+  for (const g of order){
+    const h = document.createElement("h3");
+    h.textContent = (language === "en" ? DATA.group_titles_en : DATA.group_titles)[g] || g;
+    box.appendChild(h);
+    (grouped[g] || []).forEach(name => addCheck(box, name));
+  }
+}
+
+function syncSelection(){
+  applyAxisBounds(true);
+  renderToggles();
+  setWindow(startIdx, endIdx);
+}
+
+document.getElementById("dataEarliest").textContent = DATA.earliest;
+document.getElementById("dataLatest").textContent = DATA.latest;
+document.getElementById("startSlider").addEventListener("input", ev => setWindow(+ev.target.value, endIdx));
+document.getElementById("endSlider").addEventListener("input", ev => setWindow(startIdx, +ev.target.value));
+document.getElementById("startDate").addEventListener("change", ev => setWindow(nearestIndex(ev.target.value), endIdx));
+document.getElementById("endDate").addEventListener("change", ev => setWindow(startIdx, nearestIndex(ev.target.value)));
+document.getElementById("allHistory").addEventListener("click", () => {
+  const [lo, hi] = coverageRange(windowAssets());
+  setWindow(lo, hi);
+});
+document.querySelectorAll("button[data-years]").forEach(btn => btn.addEventListener("click", () => yearsBack(+btn.dataset.years)));
+document.getElementById("all").addEventListener("click", () => { Object.keys(DATA.kinds).forEach(k => visible.add(k)); syncSelection(); });
+document.getElementById("none").addEventListener("click", () => { visible.clear(); visible.add("SVU"); syncSelection(); });
+document.getElementById("reset").addEventListener("click", () => { visible.clear(); DATA.default.forEach(k => visible.add(k)); syncSelection(); });
+document.getElementById("currencies").addEventListener("click", () => {
+  visible.add("USD");
+  visible.add("currency baseline");
+  (DATA.groups.currency || []).forEach(a => visible.add(a));
+  syncSelection();
+});
+document.getElementById("assets").addEventListener("click", () => {
+  priceAssets().forEach(a => visible.add(a));
+  Object.keys(DATA.groups).forEach(g => visible.add(g + " baseline"));
+  syncSelection();
+});
+document.querySelectorAll("input[name=mode]").forEach(el => {
+  el.addEventListener("change", ev => {
+    plotMode = ev.target.value;
+    applyAxisBounds(false);
+    setWindow(startIdx, endIdx);
+  });
+});
+document.getElementById("chart").addEventListener("mousemove", onPlotMove);
+document.getElementById("chart").addEventListener("mouseleave", onPlotLeave);
+document.getElementById("language").addEventListener("click", () => { language = language === "en" ? "zh" : "en"; localStorage.setItem("svu-language", language); applyLanguage(); });
+applyAxisBounds(false);
+applyLanguage();
+setWindow(startIdx, endIdx);
+</script>
+</body>
+</html>

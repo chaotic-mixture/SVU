@@ -1,0 +1,45 @@
+name: Public source checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install --require-hashes -r requirements.lock
+      - run: python -m pytest tests -q
+      - run: python -m scripts.export_public --output dist/ci
+      - run: python -m pytest tests -q
+        working-directory: dist/ci/SVU
+      - run: python -m scripts.demo
+        working-directory: dist/ci/SVU
+      - run: python -m scripts.demo --gallery --output reports/demo-gallery
+        working-directory: dist/ci/SVU
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --global pnpm@11.19.0
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+        working-directory: dist/ci/SVU
+      - run: pnpm audit --audit-level=low
+        working-directory: dist/ci/SVU
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: dist/ci/SVU
+      - run: pnpm run test:browser reports/demo-gallery dist/browser-evidence
+        working-directory: dist/ci/SVU
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pip-audit==2.10.1
+      - run: python -m pip_audit -r requirements.lock --disable-pip --no-deps

@@ -1,0 +1,92 @@
+# Public display names: SVU = 100; dynamic candidates are ICATI-CB / ICATI-EW.
+# Keys category_balanced_model / entity_equal_model stay SVU-CB / SVU-EW so
+# internal reports keep working. Do not treat those key strings as public names.
+version: "SVU-v0.3-candidate"
+status: "accepted_research_candidate_frozen_pool"
+# Initial supported daily download batches. The local workspace can hold additional
+# historical datasets; they do not define the daily calculation basket.
+source_datasets: ["SVU-DATA-003", "SVU-DATA-004", "SVU-DATA-006", "SVU-DATA-007", "SVU-DATA-008", "SVU-DATA-009", "SVU-DATA-010"]
+category_groups:
+  currency:
+    - AUDUSD
+    - BGNUSD_ECB
+    - BRLUSD
+    - CADUSD
+    - CHFUSD
+    - CNYUSD
+    - CZKUSD_ECB
+    - DKKUSD
+    - EURUSD
+    - GBPUSD
+    - HKDUSD
+    - HUFUSD_ECB_DISCOVERED
+    - IDRUSD_ECB
+    - ILSUSD_ECB_DISCOVERED
+    - INRUSD
+    - JPYUSD
+    - KRWUSD
+    - MXNUSD
+    - MYRUSD
+    - NOKUSD
+    - NZDUSD_ECB
+    - PHPUSD_ECB_DISCOVERED
+    - PLNUSD_ECB
+    - RONUSD_ECB
+    - SEKUSD_ECB
+    - SGDUSD
+    - THBUSD
+    - TRYUSD_ECB_DISCOVERED
+    - TWDUSD
+    - ZARUSD
+  energy: ["BRENT_USD_BBL", "WTI_USD_BBL"]
+  monetary_hedge: ["GOLD_LBMA_PM_USD_OZ", "SILVER_LBMA_USD_OZ"]
+  equity_index: ["DJIA", "NASDAQ100", "NIKKEI225", "SP500"]
+long_history_groups:
+  currency:
+    - AUDUSD
+    - BGNUSD_ECB
+    - BRLUSD
+    - CADUSD
+    - CHFUSD
+    - CNYUSD
+    - CZKUSD_ECB
+    - DKKUSD
+    - EURUSD
+    - GBPUSD
+    - HKDUSD
+    - HUFUSD_ECB_DISCOVERED
+    - IDRUSD_ECB
+    - ILSUSD_ECB_DISCOVERED
+    - INRUSD
+    - JPYUSD
+    - KRWUSD
+    - MXNUSD
+    - MYRUSD
+    - NOKUSD
+    - NZDUSD_ECB
+    - PHPUSD_ECB_DISCOVERED
+    - PLNUSD_ECB
+    - RONUSD_ECB
+    - SEKUSD_ECB
+    - SGDUSD
+    - THBUSD
+    - TRYUSD_ECB_DISCOVERED
+    - TWDUSD
+    - ZARUSD
+  energy: ["BRENT_USD_BBL", "WTI_USD_BBL"]
+  monetary_hedge: ["GOLD_LBMA_PM_USD_OZ", "SILVER_LBMA_USD_OZ"]
+  equity_index: ["NIKKEI225", "NASDAQ"]
+single_asset_policy: "control_only_no_group_stability_claim"
+primary_model: "parallel_dual_baseline"
+category_balanced_model: "SVU-CB"
+entity_equal_model: "SVU-EW"
+category_weight_policy: "equal_across_categories_then_equal_within_category"
+category_weight_policy_status: "frozen_for_v03_candidate"
+entity_weight_policy: "equal_across_economic_entities"
+representative_pool_policy: "all_eligible_fx_plus_core_categories"
+default_research_pool: "long_history_fx_core"
+sensitivity_pool: "long_history_pool"
+short_history_policy: "retain_in_database_exclude_from_long_term_candidate"
+fx_exclusion_reason: "ARS/DZD/MAD ended 2020; HRK ended 2022 euro adoption; RUB ECB ended 2022-03; ISK span <10y; ECB/_DISCOVERED duplicates not both listed"
+stability_control: "inverse_training_volatility"
+frequency: "monthly_last_observation"

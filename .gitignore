@@ -10,6 +10,25 @@ venv/
 .vscode/
 .idea/
 
-# 数据库（含数据，体积大，不该入库）
+# 数据库与全量行情（含数据，体积大，不该入库 / 不进公开快照）
 *.db
 *.sqlite3
+data/raw/
+data/processed/
+.env
+.pytest_cache/
+
+# Local outputs and private working notes; the public exporter uses an allowlist.
+/dist/
+/reports/
+/data/backup/
+/logs/
+/MERGE_RECORD.md
+/PROJECT_INDEX.md
+/scripts/_tmp_*.py
+.env.*
+*.sqlite
+*.db-wal
+*.db-shm
+*.db-journal
+node_modules/

@@ -1,0 +1,20 @@
+# Versions used by the Python 3.12 release verification, including transitive dependencies.
+# This is a version constraint set, not a wheel hash lock.
+certifi==2026.7.22
+charset-normalizer==3.5.1
+colorama==0.4.6
+idna==3.19
+iniconfig==2.3.0
+numpy==2.2.6
+packaging==26.3
+pandas==2.2.3
+pluggy==1.6.0
+pytest==9.0.3
+python-dateutil==2.9.0.post0
+pytz==2026.3.post1
+PyYAML==6.0.2
+requests==2.34.2
+six==1.17.0
+tzdata==2026.3
+urllib3==2.7.0
+pygments==2.21.0

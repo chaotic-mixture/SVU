@@ -1,0 +1,11 @@
+{
+  "name": "svu-browser-checks",
+  "private": true,
+  "scripts": {
+    "test:browser": "node scripts/test_browser.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  },
+  "packageManager": "pnpm@11.19.0"
+}
