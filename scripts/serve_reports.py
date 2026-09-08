@@ -53,6 +53,7 @@ def handler_for(reports):
             super().__init__(*args, directory=str(reports), **kwargs)
 
         def do_GET(self):
+            self._validated_target = None
             try:
                 current = current_directory(reports)
             except (OSError, ValueError, KeyError):
@@ -64,7 +65,16 @@ def handler_for(reports):
                 self.send_header('Location', '/' + current.relative_to(reports).as_posix() + '/svu_daily.html')
                 self.end_headers()
                 return
-            target = (reports / path.lstrip('/')).resolve()
+            # URLs use forward slashes. Reject ambiguous Windows separators and
+            # file URLs with trailing slashes before filesystem normalization.
+            if '\\' in path or '\x00' in path or path.endswith('/'):
+                self.send_error(404)
+                return
+            try:
+                target = (reports / path.lstrip('/')).resolve()
+            except (OSError, ValueError):
+                self.send_error(404)
+                return
             generations = (reports / 'generations').resolve()
             if not target.is_relative_to(generations) or target.suffix not in {'.html', '.json', '.md'} or not target.is_file():
                 self.send_error(404)
@@ -74,7 +84,22 @@ def handler_for(reports):
             if len(relative.parts) < 2 or not (generations / relative.parts[0] / 'generation.json').is_file():
                 self.send_error(404)
                 return
-            super().do_GET()
+            self._validated_target = str(target)
+            try:
+                super().do_GET()
+            finally:
+                self._validated_target = None
+
+        def translate_path(self, path):
+            # The inherited response code must open the exact authorized path,
+            # never reinterpret the original URL with a second path grammar.
+            if self._validated_target is None:
+                raise ValueError('no validated report target')
+            return self._validated_target
+
+        def list_directory(self, path):
+            self.send_error(404)
+            return None
 
         def do_HEAD(self):
             self.send_error(405)
@@ -119,3 +144,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

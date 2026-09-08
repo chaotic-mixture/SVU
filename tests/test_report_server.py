@@ -24,10 +24,10 @@ def test_report_server_redirects_to_complete_generation_and_hides_database(tmp_p
         thread = Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
-            def request(path):
+            def request(path, method='GET', headers=None):
                 client = HTTPConnection('127.0.0.1', server.server_port, timeout=5)
                 try:
-                    client.request('GET', path)
+                    client.request(method, path, headers=headers or {})
                     response = client.getresponse()
                     return response.status, response.getheader('Location'), response.read()
                 finally:
@@ -35,6 +35,14 @@ def test_report_server_redirects_to_complete_generation_and_hides_database(tmp_p
             code, location, _ = request('/')
             assert code == 302
             assert request(location)[::2] == (200, b'complete')
+            assert request(location + '?lang=en')[::2] == (200, b'complete')
+            assert request(location, 'HEAD')[0] == 405
+            assert request(location + '/')[0] == 404
+            assert request(location, headers={'If-Modified-Since': 'Wed, 01 Jan 2031 00:00:00 GMT'})[0] == 304
+            for filename, encoded, content in [('note name.md', 'note%20name.md', b'note'),
+                                                ('data.json', 'data.json', b'{}')]:
+                (directory / filename).write_bytes(content)
+                assert request(f'/generations/{directory.name}/{encoded}')[::2] == (200, content)
             assert request('/svu.db')[0] == 404
             assert request('/generations/' + directory.name + '/../../../svu.db')[0] == 404
             assert request('/generations/' + directory.name + '/')[0] == 404
@@ -42,6 +50,20 @@ def test_report_server_redirects_to_complete_generation_and_hides_database(tmp_p
             incomplete.mkdir()
             (incomplete / 'partial.html').write_text('partial')
             assert request('/generations/unpublished/partial.html')[0] == 404
+            # Model the transient full database created during publication.
+            snapshot = reports / '.input-test.db'
+            snapshot.write_bytes(b'private synthetic snapshot')
+            malicious = [
+                f'/generations%5c{directory.name}%5csvu_daily.html/',
+                f'/.input-test.db/..%5cgenerations%5c{directory.name}%5csvu_daily.html',
+                f'/generations/unpublished/partial.html/..%5c..%5c{directory.name}%5csvu_daily.html',
+                f'/generations\\{directory.name}\\svu_daily.html/',
+                f'/.input-test.db/..%5Cgenerations%5C{directory.name}%5Csvu_daily.html',
+                f'/.input-test.db/..%255cgenerations%255c{directory.name}%255csvu_daily.html',
+                '/generations/%2e%2e/%2e%2e/svu.db',
+            ]
+            for path in malicious:
+                assert request(path)[0] == 404, path
         finally:
             server.shutdown()
             thread.join(timeout=5)
@@ -70,3 +92,4 @@ def test_refresh_loop_stops_and_survives_failed_run(monkeypatch):
     monkeypatch.setattr(site, 'seconds_until_refresh', lambda *args: 0)
     site.refresh_loop(Stop(), 20, 0, refresh)
     assert calls == ['refresh', 'refresh']
+
