@@ -1,5 +1,7 @@
 # SVU（Standard Value Unit）
 
+简体中文 | [English](README.en.md)
+
 研究代码：从可追溯价格计算跨资产共同趋势与相对偏离。公开版本为 **diagnostic-v0.1-candidate**，不是生产指数、预测器或投资工具。
 
 | 名称 | 定义 |

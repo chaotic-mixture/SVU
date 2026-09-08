@@ -6,6 +6,7 @@
     "CONTRIBUTING.md",
     "LICENSE",
     "README.md",
+    "README.en.md",
     "config/public_release.json",
     "config/svu_v03_candidate.yaml",
     "constraints.txt",
