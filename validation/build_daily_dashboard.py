@@ -107,7 +107,7 @@ def resolve_groups(cfg_groups, mapping, entities):
 
 
 def load_panel(db_path=None):
-    cfg = yaml.safe_load((ROOT / "config/svu_v03_candidate.yaml").read_text(encoding="utf-8"))
+    cfg = yaml.safe_load((ROOT / "config/svu_v04_candidate.yaml").read_text(encoding="utf-8"))
     con = sqlite3.connect(Path(db_path or ROOT / "svu.db").resolve().as_uri() + "?mode=ro", uri=True)
     try:
         obs = pd.read_sql_query(
@@ -127,6 +127,7 @@ def load_panel(db_path=None):
         .pivot(index="observed_at", columns="canonical_symbol", values="value")
         .sort_index()
     )
+    panel.attrs["basket_revision"] = cfg["basket_revision"]
     return panel, groups, control
 
 
@@ -179,6 +180,7 @@ def main(output_dir=None, db_path=None, panel_data=None) -> None:
     if "NASDAQ" in cols:
         kinds["NASDAQ"] = "equity_index"
     payload = {
+        "basket_revision": panel.attrs.get("basket_revision"),
         "dates": [x.strftime("%Y-%m-%d") for x in panel.index],
         "prices": {col: series_values(panel[col]) for col in cols},
         "groups": groups,

@@ -51,13 +51,24 @@ def test_rebuild_rejects_modified_csv_before_loading(tmp_path):
         rebuild.validate_batch(tmp_path, 'load_official_energy')
 
 
+def test_v04_changes_only_retired_bgn_membership():
+    old = yaml.safe_load((rebuild.ROOT / 'config/svu_v03_candidate.yaml').read_text(encoding='utf-8'))
+    new = yaml.safe_load((rebuild.ROOT / 'config/svu_v04_candidate.yaml').read_text(encoding='utf-8'))
+    for pool in ['category_groups', 'long_history_groups']:
+        assert 'BGNUSD_ECB' in old[pool]['currency']
+        assert new[pool] == {key: [s for s in members if s != 'BGNUSD_ECB']
+                             for key, members in old[pool].items()}
+    assert sum(map(len, new['category_groups'].values())) == 37
+    assert new['basket_revision']['calculation'] == 'independent_full_history_recalculation_not_spliced'
+
+
 def test_synthetic_database_to_all_research_outputs(tmp_path, monkeypatch):
     from scripts import create_unique_views, create_entity_dedup_layer
     from validation import build_daily_dashboard, build_domain_dashboard, build_v03_snapshot
-    cfg = yaml.safe_load((rebuild.ROOT / 'config/svu_v03_candidate.yaml').read_text(encoding='utf-8'))
+    cfg = yaml.safe_load((rebuild.ROOT / 'config/svu_v04_candidate.yaml').read_text(encoding='utf-8'))
     symbols = sorted(set(sum(cfg['category_groups'].values(), []) + sum(cfg['long_history_groups'].values(), [])))
     (tmp_path / 'config').mkdir()
-    (tmp_path / 'config/svu_v03_candidate.yaml').write_text(yaml.safe_dump(cfg), encoding='utf-8')
+    (tmp_path / 'config/svu_v04_candidate.yaml').write_text(yaml.safe_dump(cfg), encoding='utf-8')
     manifest = {"dataset_id": "SIMULATED", "retrieved_at_utc": "2024-01-01", "numeraire": "USD", "frequency": "daily",
                 "normalized_file": "prices.csv", "normalized_sha256": "synthetic", "macro_file": "macro.csv", "macro_sha256": "synthetic",
                 "assets": [{"symbol": symbol, "unit": "synthetic", "fred_series": "SIMULATED"} for symbol in symbols]}

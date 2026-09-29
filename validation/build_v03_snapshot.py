@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main(output_dir=None, db_path=None):
-    cfg = yaml.safe_load((ROOT / "config/svu_v03_candidate.yaml").read_text(encoding="utf-8"))
+    cfg = yaml.safe_load((ROOT / "config/svu_v04_candidate.yaml").read_text(encoding="utf-8"))
     tables = {"datasets": "research_datasets", "source_assets": "research_asset_entity_map",
               "economic_entities": "research_entity_registry",
               "unique_price_observations": "research_price_observations_unique",
@@ -17,7 +17,7 @@ def main(output_dir=None, db_path=None):
     with closing(sqlite3.connect(Path(db_path or ROOT / "svu.db").resolve().as_uri() + "?mode=ro", uri=True)) as con:
         counts = {key: con.execute(f"select count(*) from {table}").fetchone()[0] for key, table in tables.items()}
         latest = con.execute("select max(observed_at) from research_price_observations_unique").fetchone()[0]
-    snap = {"snapshot": "SVU-v0.3-research", "status": "diagnostic_only",
+    snap = {"snapshot": cfg["version"], "status": "diagnostic_only",
             "generated_at_utc": datetime.now(timezone.utc).isoformat(),
             "latest_observation": latest, "config": cfg, "database": counts,
             "validation_status": "not_inferred_from_database_counts",

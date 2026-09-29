@@ -89,7 +89,7 @@ LABELS = {
 
 def canonical_domain_assets(domain: str, db_path=None) -> list[str]:
     config = yaml.safe_load(
-        (ROOT / "config" / "svu_v03_candidate.yaml").read_text(encoding="utf-8")
+        (ROOT / "config" / "svu_v04_candidate.yaml").read_text(encoding="utf-8")
     )
     symbols = list(config["category_groups"][domain])
     with closing(sqlite3.connect(Path(db_path or ROOT / "svu.db").resolve().as_uri() + "?mode=ro", uri=True)) as connection:
@@ -166,6 +166,7 @@ def render_report(data: dict, output_path: Path) -> str:
 def build(domain: str, output_dir=None, db_path=None, panel=None, assets=None) -> dict:
     if domain not in DOMAIN_TITLES:
         raise ValueError(f"未知领域: {domain}")
+    configured_basket = panel is None and assets is None
     assets = canonical_domain_assets(domain, db_path) if assets is None else assets
     panel = load_domain_panel(db_path or ROOT / "svu.db", assets) if panel is None else panel
     result = build_domain_view(panel, assets, domain_key=domain)
@@ -182,7 +183,8 @@ def build(domain: str, output_dir=None, db_path=None, panel=None, assets=None) -
             "measurement_note": MEASUREMENT_NOTES[domain],
             "measurement_note_en": MEASUREMENT_NOTES_EN[domain],
             "status": "derived_readonly_domain_view",
-            "source_project": "SVU-v0.3-candidate",
+            "source_project": "SVU-v0.4-candidate",
+            "basket_revision": yaml.safe_load((ROOT / "config/svu_v04_candidate.yaml").read_text(encoding="utf-8"))["basket_revision"] if configured_basket else None,
             "source_table": "research_entity_observations_unique",
             "main_definition_unchanged": True,
             "derived_layer_only": True,

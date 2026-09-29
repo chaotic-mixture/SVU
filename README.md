@@ -58,3 +58,5 @@ python -m scripts.export_public --output dist/candidate
 代码为 MIT，版权主体为 chaotic-mixture，见 [LICENSE](LICENSE)。不分发下载行情；FRED、ECB、LBMA 数据受各自条款约束，代码许可证不覆盖第三方数据。合成夹具不是市场数据。
 
 贡献与报告问题见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+当前计算使用 **v0.4（37 个成员）**，移除停止发布的 BGN；旧 v0.3 配置和历史页面保留。新版历史独立重算，不与旧版拼接。成员退出、日期对齐和延迟规则见 [篮子政策](docs/BASKET_POLICY.md)。

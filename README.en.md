@@ -62,3 +62,5 @@ The output contains a clean source tree, a ZIP archive, and a SHA-256 file manif
 The code is licensed under MIT, with copyright attributed to chaotic-mixture; see [LICENSE](LICENSE). Downloaded market data are not distributed. FRED, ECB, and LBMA data are governed by their respective terms; the code license does not cover third-party data. Synthetic fixtures are not market data.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions and issue reporting.
+
+Current calculations use **v0.4 (37 members)**, excluding the discontinued BGN series. The v0.3 configuration and prior pages remain available. History is independently recalculated, not spliced to v0.3. See [basket policy](docs/BASKET_POLICY.md) for membership, calendar alignment and freshness rules.

@@ -66,6 +66,8 @@
     "validation/domain_view.html",
     "validation/domain_view.py",
     "validation/icati.py",
-    "validation/window_rebase.py"
+    "validation/window_rebase.py",
+    "config/svu_v04_candidate.yaml",
+    "docs/BASKET_POLICY.md"
   ]
 }
