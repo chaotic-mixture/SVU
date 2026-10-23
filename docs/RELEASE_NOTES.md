@@ -1,6 +1,6 @@
 # diagnostic-v0.1-candidate
 
-This is a local source candidate, not a published release.
+Research source candidate; GitHub source publication is not a production-index release.
 
 Final source review on 2026-09-08 added regression coverage for English labels after chart interaction, language persistence, diagnostic table headings, and scheduler recovery after a failed run. Shutdown now waits for an active refresh to complete, and missing refresh dependencies fail visibly at startup. Windows launch prefers a project virtual environment. Scheduled refresh is ordinary Python tied to the server lifecycle; it does not use AI.
 
@@ -16,3 +16,11 @@ Final source review on 2026-09-08 added regression coverage for English labels a
 - Fixed tooltip recovery after an empty daily window, mobile page overflow and large-series domain chart extrema calculations. Added synthetic full-page gallery and automated Chromium interaction checks at 1440 and 390 pixels.
 
 On 2026-09-07, an isolated live reconstruction, live incremental refresh, 58 historical endpoint probes and real-data browser checks all passed. The complete official basket still ends on 2025-12-30; newer individual observations do not extend it. Local tests ran on Windows; Linux runtime and remote GitHub CI execution remain unverified. Remote history and data redistribution rights are outside this source candidate. Test success is not an economic claim.
+
+## 2026-10-23: labour and earnings
+
+- Added official BLS monthly and ILOSTAT annual ingestion with atomic page replacement and raw-response hashes.
+- Added bilingual country multiselect, one-chart comparison, explicit reference-unit conversions, independent survey selection and missing-data notices. Country colors remain stable when selections change.
+- Unified module navigation and added a stable file-based homepage, preserving dated generations.
+- Documented the source layout and kept data, databases, private workspace files and generated artifacts outside the release allowlist.
+- Live refresh: labour succeeded; 1,322 new asset observations were inserted, but two LBMA HTTP 403 failures preserved the previous complete market publication. See the current access limitations in REPRODUCIBILITY.md.

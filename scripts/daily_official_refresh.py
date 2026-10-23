@@ -189,6 +189,9 @@ def rebuild_outputs():
 
 
 def main() -> int:
+    # Independent low-frequency data must refresh even if asset sources fail.
+    from scripts.refresh_labor import main as refresh_labor
+    labor_status = refresh_labor()
     if not DB.is_file():
         raise FileNotFoundError("research database missing; run python -m scripts.rebuild_research first")
     RAW.mkdir(parents=True, exist_ok=True)
@@ -196,7 +199,15 @@ def main() -> int:
     from scripts.publication import operation_lock
     with operation_lock(ROOT / "reports" / ".database.lock"):
         with closing(sqlite3.connect(DB)) as con:
-            return run_refresh(con)
+            market_status = run_refresh(con)
+    if not market_status and not labor_status:
+        from scripts.refresh_labor import rebuild_benchmarks
+        try:
+            rebuild_benchmarks(ROOT)
+        except Exception as exc:
+            print('Labor benchmark rebuild failed; previous page retained: ' + str(exc))
+            labor_status = 1
+    return 1 if labor_status or market_status else 0
 
 
 def run_refresh(con):

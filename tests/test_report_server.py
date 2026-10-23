@@ -92,4 +92,3 @@ def test_refresh_loop_stops_and_survives_failed_run(monkeypatch):
     monkeypatch.setattr(site, 'seconds_until_refresh', lambda *args: 0)
     site.refresh_loop(Stop(), 20, 0, refresh)
     assert calls == ['refresh', 'refresh']
-

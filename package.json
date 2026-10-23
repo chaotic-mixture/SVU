@@ -2,7 +2,8 @@
   "name": "svu-browser-checks",
   "private": true,
   "scripts": {
-    "test:browser": "node scripts/test_browser.cjs"
+    "test:browser": "node scripts/test_browser.cjs",
+    "test:browser:labor": "node scripts/test_labor_browser.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

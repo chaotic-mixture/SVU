@@ -54,6 +54,17 @@ def handler_for(reports):
 
         def do_GET(self):
             self._validated_target = None
+            if urlsplit(self.path).path in {'/labor.html', '/index.html'}:
+                target = reports / urlsplit(self.path).path.lstrip('/')
+                if target.is_symlink() or not target.is_file():
+                    self.send_error(404, 'Run scripts.refresh_labor first')
+                    return
+                self._validated_target = str(target.resolve())
+                try:
+                    super().do_GET()
+                finally:
+                    self._validated_target = None
+                return
             try:
                 current = current_directory(reports)
             except (OSError, ValueError, KeyError):
@@ -144,4 +155,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

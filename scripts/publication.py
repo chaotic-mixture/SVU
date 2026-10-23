@@ -52,6 +52,23 @@ def current_directory(reports):
     return directory
 
 
+def write_entry_page(reports):
+    """Keep file:// entry points current without modifying historical generations."""
+    current = current_directory(reports)
+    page = (current / 'svu_daily.html').read_text(encoding='utf-8')
+    prefix = './generations/' + current.name + '/'
+    page = page.replace('href="domains/', 'href="' + prefix + 'domains/')
+    page = page.replace('href="svu_daily.html"', 'href="./index.html"')
+    page = page.replace('href="../../labor.html"', 'href="./labor.html"')
+    for name in ['index.html', 'svu_daily.html', 'svu_v03_dashboard.html']:
+        temporary = reports / ('.entry-' + uuid.uuid4().hex + '.tmp')
+        try:
+            temporary.write_text(page, encoding='utf-8')
+            os.replace(temporary, reports / name)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
 def publish(root, builders=None):
     root = Path(root)
     reports = root / 'reports'
@@ -94,6 +111,14 @@ def publish(root, builders=None):
                 os.replace(temporary, reports / 'current.json')
             finally:
                 temporary.unlink(missing_ok=True)
+            try:
+                write_entry_page(reports)
+            except OSError as exc:
+                # The authoritative pointer has already committed. A convenience
+                # entry-file failure must not mark that complete generation failed.
+                results.append({'domain_key': 'local_entry', 'status': 'failed',
+                                'generation': generation, 'error': str(exc)[:500],
+                                'publication_complete': True})
             return results
         except Exception as exc:
             failure = {'status': 'failed', 'error': str(exc)[:500], 'previous_generation_preserved': True}

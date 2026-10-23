@@ -59,3 +59,30 @@ def test_pointer_rejects_path_traversal(tmp_path):
     (tmp_path / 'current.json').write_text(json.dumps({'generation': '../private'}))
     with pytest.raises(ValueError):
         current_directory(tmp_path)
+
+
+def test_stable_entry_links_follow_generation_without_mutating_history(tmp_path):
+    init_db(tmp_path)
+    page='<a href="domains/currency.html">FX</a><a href="../../labor.html">Labor</a>'
+    steps=[('daily',lambda out,db:(out/'svu_daily.html').write_text(page)),
+           ('snapshot',lambda out,db:(out/'svu_v03_snapshot.json').write_text('{}'))]
+    publish(tmp_path,steps)
+    reports=tmp_path/'reports';first=current_directory(reports)
+    publish(tmp_path,steps)
+    latest=current_directory(reports)
+    assert first!=latest and (first/'svu_daily.html').read_text()==page
+    for name in ['index.html','svu_daily.html','svu_v03_dashboard.html']:
+        content=(reports/name).read_text()
+        assert f'./generations/{latest.name}/domains/currency.html' in content
+        assert 'href="./labor.html"' in content
+
+
+def test_entry_write_failure_does_not_invalidate_committed_generation(tmp_path,monkeypatch):
+    init_db(tmp_path)
+    def fail(reports): raise OSError('entry locked')
+    monkeypatch.setattr('scripts.publication.write_entry_page',fail)
+    result=publish(tmp_path,builders())
+    current=current_directory(tmp_path/'reports')
+    assert (current/'svu_daily.html').read_text()=='complete'
+    assert not (current/'failed.json').exists()
+    assert result[-1]['status']=='failed' and result[-1]['publication_complete'] is True
