@@ -24,3 +24,7 @@ On 2026-09-07, an isolated live reconstruction, live incremental refresh, 58 his
 - Unified module navigation and added a stable file-based homepage, preserving dated generations.
 - Documented the source layout and kept data, databases, private workspace files and generated artifacts outside the release allowlist.
 - Live refresh: labour succeeded; 1,322 new asset observations were inserted, but two LBMA HTTP 403 failures preserved the previous complete market publication. See the current access limitations in REPRODUCIBILITY.md.
+
+### Dependency audit follow-up
+
+GitHub Actions passed the Python 3.11/3.12 functional and browser jobs. Its dependency audit reported PYSEC-2026-4320 in certifi 2026.7.22 and PYSEC-2026-4175/4176/4177 in urllib3 2.7.0. Pins were updated to the reported fixed versions, certifi 2026.10.19 and urllib3 2.8.0, with PyPI artifact hashes regenerated. No advisories were ignored and the audit gate remains enabled.
