@@ -26,6 +26,8 @@ jobs:
         with:
           node-version: '22'
       - run: npm install --global pnpm@11.19.0
+      - run: node scripts/test_labor_window.cjs
+        working-directory: dist/ci/SVU
       - run: pnpm install --frozen-lockfile --ignore-scripts
         working-directory: dist/ci/SVU
       - run: pnpm audit --audit-level=low

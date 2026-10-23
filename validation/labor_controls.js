@@ -7,12 +7,20 @@ function syncLaborWindow(rows,period,key){
  if((period==='year')!==(laborMode()==='annual'))return;
  const periods=rows.map(r=>r[period]);
  if(laborWindow.key!==key){laborWindow={key,periods,start:periods[0]||'',end:periods.at(-1)||''}}else laborWindow.periods=periods;
+ // Preserve the chosen window across country/survey changes, including empty
+ // selections. Clamp only when the available extent actually excludes a bound.
+ if(periods.length){
+  const clamp=value=>!value?null:value<periods[0]?periods[0]:value>periods.at(-1)?periods.at(-1):value;
+  laborWindow.start=clamp(laborWindow.start)||periods[0];
+  laborWindow.end=clamp(laborWindow.end)||periods.at(-1);
+ }
  const {start,end}=laborWindow;
  for(const [id,value] of [['start',start],['end',end]]){
   const date=document.getElementById(id+'Date'),slider=document.getElementById(id+'Slider');
   date.value=value?periodDate(value,id==='end'):'';date.disabled=!periods.length;
   date.min=periods.length?periodDate(periods[0]):'';date.max=periods.length?periodDate(periods.at(-1),true):'';
-  slider.max=Math.max(0,periods.length-1);slider.value=Math.max(0,periods.indexOf(value));slider.disabled=!periods.length;
+  const nearest=periods.reduce((best,p,i)=>Math.abs(Date.parse(periodDate(p))-Date.parse(periodDate(value||p)))<Math.abs(Date.parse(periodDate(periods[best]))-Date.parse(periodDate(value||p)))?i:best,0);
+  slider.max=Math.max(0,periods.length-1);slider.value=nearest;slider.disabled=!periods.length;
  }
  document.getElementById('windowLabel').textContent=start?start+' — '+end:laborCopy[language].empty;
 }

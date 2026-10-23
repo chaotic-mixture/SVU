@@ -21,7 +21,7 @@ function renderAnnual(){
   let group=groups.find(g=>g.source===survey.value);
   const compareGroups=selectedComparisonGroups(metric.value);
   const windowRows=compareGroups.length?[...new Set([...compareGroups.flatMap(g=>g.rows.map(r=>r.year)),...(group?.rows||[]).map(r=>r.year)])].sort().map(year=>({year})):group?.rows||[];
-  syncLaborWindow(windowRows,'year',country.value+'|'+metric.value+'|'+survey.value+'|'+[...comparisonCountries].sort().join(',')+'|'+JSON.stringify(comparisonSources));
+  syncLaborWindow(windowRows,'year','annual|'+metric.value);
   renderCountryComparison(metric.value,compareGroups);
   if(group){const filtered=laborRows(group.rows,'year');group=filtered.length?{...group,rows:filtered}:null}
   const body=annualEl('annual-rows'),svg=annualEl('annual-chart');

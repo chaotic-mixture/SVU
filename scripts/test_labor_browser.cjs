@@ -20,6 +20,17 @@ const assert=require('node:assert/strict');
         assert.equal(await page.locator('#country-comparison path[data-country]').count(),2);
       }
       await page.locator('#single-country-summary').click();
+      // Changing details or comparison membership must not rebase the window.
+      await page.locator('[data-years="3"]').click();
+      const chosenWindow=await page.locator('#windowLabel').textContent();
+      await page.locator('#annual-country-select').selectOption('USA');
+      assert.equal(await page.locator('#windowLabel').textContent(),chosenWindow);
+      await page.locator('input[data-country="JPN"]').check();
+      assert.equal(await page.locator('#windowLabel').textContent(),chosenWindow);
+      await page.locator('input[data-country="JPN"]').uncheck();
+      assert.equal(await page.locator('#windowLabel').textContent(),chosenWindow);
+      await page.locator('#allHistory').click();
+      assert.notEqual(await page.locator('#windowLabel').textContent(),chosenWindow);
       await page.locator('#countries-none').click();
       for(const code of ['USA','RUS','HKG'])await page.locator('input[data-country="'+code+'"]').check();
       assert.equal(await page.locator('#country-comparison path[data-country="HKG"]').count(),0);
@@ -75,6 +86,9 @@ const assert=require('node:assert/strict');
       const countries=await page.locator('#annual-country-select option').evaluateAll(os=>os.map(o=>o.value));
       for(const country of countries){
         await page.locator('#annual-country-select').selectOption(country);
+        // Coverage checks explicitly request full history; country changes now
+        // correctly preserve the user's previous (possibly empty) window.
+        await page.locator('#allHistory').click();
         const available=await page.locator('#annual-survey-select option').count();
         assert.equal(await page.locator('#annual-rows tr').count()>0,available>0);
       }

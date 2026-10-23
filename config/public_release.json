@@ -52,6 +52,7 @@
     "scripts/start_site.bat",
     "scripts/test_browser.cjs",
     "scripts/test_labor_browser.cjs",
+    "scripts/test_labor_window.cjs",
     "tests/fixtures/synthetic_panel.csv",
     "tests/test_baseline.py",
     "tests/test_dashboard_template.py",
