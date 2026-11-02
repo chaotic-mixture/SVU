@@ -67,9 +67,9 @@ pnpm run test:browser reports/demo-gallery dist/browser-evidence
 
 On Linux, use `pnpm exec playwright install --with-deps chromium` to install required browser system libraries. The gallery is explicitly simulated. Checks exercise the daily chart and four domain pages at desktop and mobile widths, including window controls, selection reset and tooltip recovery after an empty window. HTTP requests are blocked during these local-page tests. `pnpm audit` checks the browser tooling dependencies; CI also scans the Python lock with pip-audit. Passing tests establishes the tested software behavior, not economic validity or data redistribution rights.
 
-## Current source access limitations (2026-10-23)
+## Current source access limitations (2026-11-02)
 
-The latest live refresh inserted 1,322 asset observations across successful sources. Both `prices.lbma.org.uk` gold and silver JSON endpoints returned HTTP 403. The complete market generation was intentionally not replaced. Labour data refreshed successfully, covering 203 countries/territories, with BLS observations through September 2026. Its benchmark conversions still reference the last complete market generation.
+The 2026-11-02 live refresh inserted 434 asset observations across successful sources. Both `prices.lbma.org.uk` gold and silver JSON endpoints returned HTTP 403. The complete market generation was intentionally not replaced. Labour data refreshed successfully, covering 203 countries/territories, with BLS observations through September 2026. Its benchmark conversions still reference the last complete market generation.
 
 [LBMA's official access notice](https://www.lbma.org.uk/prices-and-data/lbma-precious-metal-prices) states that historical tables moved to MyLBMA and require the relevant IBA licence. The observed 403 alone does not establish its technical cause; public access must not be assumed. A clean machine can run offline tests and fetch independent labour data, but full current-basket reconstruction may be blocked until legitimate data access is available. No provider replacement, forward fill, automatic basket removal or access-control bypass is performed.
 

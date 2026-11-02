@@ -28,3 +28,12 @@ On 2026-09-07, an isolated live reconstruction, live incremental refresh, 58 his
 ### Dependency audit follow-up
 
 GitHub Actions passed the Python 3.11/3.12 functional and browser jobs. Its dependency audit reported PYSEC-2026-4320 in certifi 2026.7.22 and PYSEC-2026-4175/4176/4177 in urllib3 2.7.0. Pins were updated to the reported fixed versions, certifi 2026.10.19 and urllib3 2.8.0, with PyPI artifact hashes regenerated. No advisories were ignored and the audit gate remains enabled.
+
+
+## 2026-11-02: official data refresh
+
+- Refreshed BLS and ILOSTAT successfully; coverage remains 203 countries/territories and the latest BLS observation remains September 2026.
+- Added 434 asset observations locally. Of the 88 checked assets, 77 received new observations, 9 had no new observations and 2 failed; another 13 entries were skipped.
+- Both LBMA gold and silver JSON endpoints still return HTTP 403. The prior complete market publication is retained, with its common window ending on 2026-09-18. Labour conversions continue to use that published basket.
+- Bilingual desktop/mobile labour browser checks passed after the refresh, including country selection and date-window retention.
+- Updated both README versions and reproducibility notes. Downloaded data, databases and generated pages remain local and are excluded from the public source repository.
