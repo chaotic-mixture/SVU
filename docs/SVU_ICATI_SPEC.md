@@ -1,62 +1,52 @@
-# SVU 与 ICATI 命名和数学规范
+# SVU and ICATI: names and mathematical specification
 
-## SVU：固定标准单位
+## SVU: a fixed reference coordinate
 
 ```text
 SVU_t = 100
 ```
 
-SVU 是显示和比较用的固定参照线，不参与市场流通，不随资产篮子涨跌。美元、欧元、日元等货币也属于被 SVU 衡量的资产。美元只是原始汇率数据的计价货币，不是 SVU 的替代基线。
+SVU is a fixed display and comparison reference. It does not circulate in markets and does not move with the asset basket. Currencies such as USD, EUR and JPY are assets measured against the index. USD is the denomination used by source exchange-rate series; it is not a substitute definition of SVU.
 
-## ICATI：动态共同趋势指数
+## ICATI: a dynamic common-trend index
 
-ICATI（International Cross-Asset Trend Index）用于描述被纳入资产篮子的动态共同趋势：
+The International Cross-Asset Trend Index (ICATI) describes the common trend among the assets included in a basket:
 
 ```text
 ICATI_t = 100 × exp(Σ_i w_i × log(P_i,t / P_i,0))
 ```
 
-当前有两个估计版本：
+The project currently calculates two variants:
 
-- `ICATI-CB`：类别平衡；
-- `ICATI-EW`：经济实体等权。
+- `ICATI-CB`: category-balanced weights;
+- `ICATI-EW`: equal economic-entity weights.
 
-## 相对 SVU 的资产曲线
+## Asset performance relative to the common trend
 
 ```text
 Asset/SVU_t = 100 × (P_i,t / P_i,0) / (ICATI_t / ICATI_0)
 ```
 
-解释：
+Above 100 means the asset outperformed the ICATI common trend; below 100 means it underperformed; 100 means it moved in line with the trend.
 
-- 大于 100：资产跑赢 ICATI 共同趋势；
-- 小于 100：资产跑输 ICATI 共同趋势；
-- 等于 100：资产与 ICATI 同步。
+SVU is a fixed coordinate, ICATI is a dynamic common-trend measurement, and Asset/SVU is an asset's deviation relative to that trend. `SVU` is no longer used to name dynamic indices. Legacy report keys `SVU-EW` and `SVU-CB` are interpreted in new output layers as `ICATI-EW` and `ICATI-CB`. Historical files are not rewritten; new reports use current names.
 
-## 三者关系
+## Domain-relative views
 
-```text
-SVU：固定坐标
-ICATI：动态共同趋势测量
-Asset/SVU：资产相对共同趋势的偏离
-```
+Read-only domain pages do not create another value unit or change the main asset pool, source policies, ICATI-CB or ICATI-EW:
 
-`SVU` 不再用于命名动态指数。历史报告中的 `SVU-EW`/`SVU-CB` 在新输出层统一解释为 `ICATI-EW`/`ICATI-CB`；历史文件不重写，只在新报告中使用新名称。
+- `SVU-DV-CURRENCY`: currencies;
+- `SVU-DV-ENERGY`: energy;
+- `SVU-DV-MONETARY_HEDGE`: precious-metal hedges;
+- `SVU-DV-EQUITY_INDEX`: equity indices.
 
-## 分领域相对视图
-
-SVU 主项目可以提供按领域拆分的只读派生页面。它们不新增价值单位，也不改变主项目的资产池、来源、ICATI-CB 或 ICATI-EW：
-
-- `SVU-DV-CURRENCY`：货币领域；
-- `SVU-DV-ENERGY`：能源领域；
-- `SVU-DV-MONETARY_HEDGE`：贵金属对冲领域；
-- `SVU-DV-EQUITY_INDEX`：股票指数领域。
-
-每个领域先在自身共同有效窗口内计算领域动态共同趋势，再将该趋势显示为固定相对基线 100：
+Each domain calculates its dynamic common trend over dates where every domain member has an actual observation, then displays relative performance against a fixed baseline of 100:
 
 ```text
 DomainICATI_g,t = 100 × exp(Σ_i w_i,g × log(P_i,t / P_i,0))
 AssetRelative_i,g,t = 100 × (P_i,t / P_i,0) / (DomainICATI_g,t / 100)
 ```
 
-领域内默认等权。只使用所有领域成员均有报价的共同日期，不前向填充。货币页面可额外显示恒定美元计价参照相对于货币领域 ICATI 的曲线；美元不加入货币领域 ICATI 的计算篮子。不同领域的 100 由于成员和窗口可能不同，不作跨领域直接比较。机器页面和报告位于 `reports/domains/` 与 `reports/domain_*_latest.*`。
+Weights are equal within a domain by default. Missing dates are not forward-filled. The currency page may show a constant USD-denominated reference relative to the currency-domain ICATI; USD is not included in that domain's calculation basket. A value of 100 in different domains may refer to different members and base windows, so domain values are not directly comparable. Machine-readable reports are under `reports/domains/` and `reports/domain_*_latest.*`.
+
+See `README.zh-CN.md` for a Chinese overview.

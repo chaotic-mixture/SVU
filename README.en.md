@@ -1,21 +1,21 @@
-# SVU（Standard Value Unit）
+# SVU (Standard Value Unit)
 
-[English](README.md) | 简体中文
+[简体中文](README.zh-CN.md) | English
 
-研究代码：从可追溯价格计算跨资产共同趋势与相对偏离。公开版本为 **diagnostic-v0.1-candidate**，不是生产指数、预测器或投资工具。
+Research code for calculating cross-asset common trends and relative deviations from traceable prices. The public version is **diagnostic-v0.1-candidate**, a research candidate rather than a production index, forecasting system, or investment tool.
 
-| 名称 | 定义 |
+| Name | Definition |
 |---|---|
-| SVU | 恒为 100 的显示坐标 |
-| ICATI-CB | 类别先等权、类内再等权的动态共同趋势 |
-| ICATI-EW | 经济实体等权的动态共同趋势，用于对照 |
-| Domain ICATI | 单领域的等权动态共同趋势 |
+| SVU | A display coordinate fixed at 100 |
+| ICATI-CB | A dynamic common trend with equal category weights and equal asset weights within each category |
+| ICATI-EW | A dynamic common trend with equal economic-entity weights, used for comparison |
+| Domain ICATI | An equal-weight dynamic common trend within one asset domain |
 
-资产曲线表示相对 ICATI 的偏离，不是“资产值多少 SVU”。数学定义见 [规范](docs/SVU_ICATI_SPEC.md)。
+Asset curves show deviations relative to ICATI; they do not measure how many SVU an asset is worth. See the [mathematical specification](docs/SVU_ICATI_SPEC.md).
 
-## 快速开始（离线、无需数据库）
+## Quick start: offline, no database required
 
-支持 Python 3.11 / 3.12。在项目根目录运行：
+Python 3.11 and 3.12 are supported. Run these commands from the project root:
 
 ```text
 python -m pip install --require-hashes -r requirements.lock
@@ -23,9 +23,9 @@ python -m pytest tests -q
 python -m scripts.demo --output reports/demo
 ```
 
-打开 `reports/demo/demo.html`；机器结果为 `reports/demo/demo.json`。输入来自标记为 `SIMULATED` 的合成夹具，不能作为市场证据。测试覆盖数学、无效输入、补洞、ECB 交叉汇率、新目录加载和公开导出；私有数据库相关测试在没有数据时跳过。
+Open `reports/demo/demo.html`; the machine-readable result is `reports/demo/demo.json`. Inputs come from a synthetic fixture explicitly marked `SIMULATED` and must not be treated as market evidence. Tests cover mathematics, invalid inputs, missing-date insertion, ECB cross rates, loading into a fresh directory, and public export. Tests requiring the private historical database are skipped when it is absent.
 
-## 官方数据与图表
+## Official data and charts
 
 ```text
 python -m scripts.rebuild_research --download
@@ -33,62 +33,66 @@ python -m scripts.daily_official_refresh
 python -m scripts.serve_reports
 ```
 
-重建命令按顺序下载并校验 FRED / ECB / LBMA 批次、创建研究视图、生成日级图和四个领域页面。需要网络及可用的官方数据源；历史批次采用各脚本声明的请求窗口。运行本地服务后打开 `http://127.0.0.1:8000`。服务运行期间会在本机当地时间每天 20:00 自动运行官方数据刷新；关闭服务即停止调度。可用 `--refresh-time HH:MM` 修改时间，或用 `--no-refresh` 只浏览报告。页面位于 `reports/generations/`，全部从同一数据库快照生成，成功后原子更新 `reports/current.json`；失败时保留上一份完整页面。数据修订、空响应、缺少篮子成员和输出失败必须先解决，不能用部分结果宣称完整复现。
+The rebuild command downloads and verifies registered FRED, ECB, and LBMA batches in order, creates research views, and generates the daily dashboard and four domain pages. It requires network access and available official sources. Historical batches use the request windows declared in their scripts.
 
-可运行 `python -m scripts.check_sources --all` 检查配置来源的历史样本是否可访问；它不证明各序列已更新至今天。最近已发布 v0.4 完整篮子共同窗口截止 2026-09-18。2026-11-02 更新新增 434 条资产观测，但 LBMA 黄金/白银端点返回 HTTP 403，完整资产页面因此保留旧快照。不能把部分资产的新数据当作完整篮子的新值。LBMA 官方历史表格已迁移至需相应许可的门户，参见 [数据访问限制](docs/REPRODUCIBILITY.md#current-source-access-limitations-2026-11-02)。
+Once the server is running, open `http://127.0.0.1:8000`. It automatically refreshes official data every day at **20:00 local machine time** while running. Set `--refresh-time HH:MM` to change the schedule, or use `--no-refresh` to serve reports only.
 
-图表右上角的 EN / ZH 按钮切换中英文。Windows 可使用 `scripts\start_site.bat` 启动服务，优先使用项目 `.venv` 环境。调度完全由 Python 执行，不依赖 AI；关闭浏览器标签页不会关闭后台服务，需在服务终端按 Ctrl+C。退出会停止安排新更新，并等待正在执行的刷新完成。服务关闭期间错过的更新时间不会自动补跑，可手动执行刷新命令。尚未重建数据库的公开源码包需要先完成上述下载重建。
+Pages are generated under `reports/generations/` from a single database snapshot. Once every output succeeds, `reports/current.json` is updated atomically. A failed refresh preserves the previous complete publication. Resolve source revisions, empty responses, missing basket members, and output failures before claiming complete reproduction.
 
-完整步骤、错误语义和边界见 [复现说明](docs/REPRODUCIBILITY.md)。数学测试通过不代表所有官方来源当前可用，也不代表经济有效性得到验证。
+Run `python -m scripts.check_sources --all` to test access to historical samples from configured sources. This does not prove that every series is current. The latest published v0.4 complete window ends on **2026-09-18**. The 2026-11-02 refresh inserted 434 asset observations, but both LBMA endpoints returned HTTP 403, so the complete market publication was retained. Partial asset updates do not extend the published complete basket. LBMA historical tables now require portal access with the relevant licence; see [source limitations](docs/REPRODUCIBILITY.md#current-source-access-limitations-2026-11-02).
 
-## 项目结构
+Use the **EN / ZH** button in the top-right corner of a chart to switch between English and Chinese. On Windows, `scripts\start_site.bat` starts the server and prefers the project's `.venv` environment. Scheduling uses Python only and does not depend on AI. Closing a browser tab does not stop the server; press **Ctrl+C** in the server terminal. Shutdown cancels future scheduled work and waits for an active refresh to finish. Schedules missed while the server was off are not automatically retried; run the refresh command manually when needed. A source-only installation must complete the initial download and database rebuild before serving official-data charts.
 
-目录职责、常用入口和生成文件位置见 [项目结构](docs/PROJECT_STRUCTURE.md)。无需数据库的离线示例、独立劳动数据更新和完整资产重建是不同入口。
+See the [reproduction guide](docs/REPRODUCIBILITY.md) for complete steps, failure behavior, and limitations. Passing mathematical tests does not establish current provider availability or economic validity.
 
-## 公开发行范围
+## Project structure
 
-公开内容由 `config/public_release.json` 逐文件定义，包括数学函数、支持的官方数据脚本、图表模板、配置、测试和说明。开发工作区可能保留历史实验、旧 Web/GNN 原型和内部资料；它们不属于受支持的发行功能。
+See [project structure](docs/PROJECT_STRUCTURE.md) for directory responsibilities, commands and generated files. Offline examples, independent labour refresh and complete market reconstruction are separate entry points.
 
-生成一个新的公开候选目录：
+## Public distribution scope
+
+`config/public_release.json` defines the public distribution file by file. It includes mathematical functions, supported official-data scripts, chart templates, configuration, tests, and documentation. A development workspace may also contain historical experiments, legacy Web/GNN prototypes, and internal material; these are outside the supported public distribution.
+
+To create a new public candidate directory:
 
 ```text
 python -m scripts.export_public --output dist/candidate
 ```
 
-输出包括干净源码树、ZIP 和 SHA-256 文件清单，不包含 Git 历史、行情、数据库、内部记录或历史原型。输出目录必须不存在。应从该独立源码树准备新仓库，不应直接推送内部工作区或沿用其历史。导出不会连接 GitHub 或发布版本。
+The output contains a clean source tree, a ZIP archive, and a SHA-256 file manifest. It excludes Git history, downloaded market data, databases, internal notes, and historical prototypes. The output directory must not already exist. Prepare a public repository from this independent source tree; do not push the internal workspace or reuse its private history. Exporting does not connect to GitHub or publish a release.
 
-## 许可证与贡献
+## License and contributions
 
-代码为 MIT，版权主体为 chaotic-mixture，见 [LICENSE](LICENSE)。不分发下载数据；FRED、ECB、LBMA、BLS 和 ILOSTAT 数据受各自条款约束，代码许可证不覆盖第三方数据。合成夹具不是市场数据。
+The code is licensed under MIT, with copyright attributed to chaotic-mixture; see [LICENSE](LICENSE). Downloaded market data are not distributed. FRED, ECB, LBMA, BLS and ILOSTAT data are governed by their respective terms; the code license does not cover third-party data. Synthetic fixtures are not market data.
 
-贡献与报告问题见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions and issue reporting.
 
-当前计算使用 **v0.4（37 个成员）**，移除停止发布的 BGN；旧 v0.3 配置和历史页面保留。新版历史独立重算，不与旧版拼接。成员退出、日期对齐和延迟规则见 [篮子政策](docs/BASKET_POLICY.md)。
+Current calculations use **v0.4 (37 members)**, excluding the discontinued BGN series. The v0.3 configuration and prior pages remain available. History is independently recalculated, not spliced to v0.3. See [basket policy](docs/BASKET_POLICY.md) for membership, calendar alignment and freshness rules.
 
-## 劳动与收入（独立多国页面）
+## Labour and earnings (independent multi-country page)
 
-运行 `python -m scripts.refresh_labor`，然后打开 `reports/labor.html` 或本地服务的 `/labor.html`。无需市场数据库或 API 密钥，页面支持中英文。
+Run `python -m scripts.refresh_labor`, then open `reports/labor.html` or `/labor.html` on the local server. No market database or API key is required. The page supports Chinese and English.
 
-- **ILOSTAT 多国年度数据**：雇员平均小时工资、平均月工资（本币），以及雇员平均每周实际工作时间。选择国家/地区、指标和调查来源；不拼接不同调查，不将本币金额作跨国排名。2026-11-02 快照共覆盖 203 个国家和地区（至少有一项指标），并非每个国家都有全部指标或近期数据。
-- **美国 BLS 月度追踪**：CES0500000003（税前名义美元/小时）、CES0500000002（带薪小时/周），私营非农全体雇员、季调。获取最近十个日历年，保留初步值。带薪工时不等于实际工作时间。
+- **ILOSTAT annual data**: mean hourly and monthly employee earnings in local currency, and mean weekly hours actually worked per employee. Select a country/territory, indicator and survey. Surveys are never spliced; local-currency amounts are not ranked across countries. The 2026-11-02 snapshot covers 203 countries and territories with at least one indicator, not necessarily all indicators or recent observations.
+- **US BLS monthly tracker**: CES0500000003 (gross nominal USD/hour) and CES0500000002 (paid hours/week), all employees in the private nonfarm sector, seasonally adjusted. Fetches the latest ten calendar years and preserves preliminary flags. Paid hours are not hours actually worked.
 
-现有服务每日定时任务会先刷新此页，再刷新资产数据；不依赖 AI，服务退出后停止调度，关闭浏览器标签页不会停止服务。启动服务用 `python -m scripts.serve_reports`，默认每天本地时间 20:00 检查，也可使用 `--refresh-time HH:MM`。启动服务不会补跑错过的更新，首次可手动运行上述刷新命令。
+The existing server scheduler refreshes this page before asset data without AI. Start it with `python -m scripts.serve_reports`; the default check is daily at 20:00 local time, configurable using `--refresh-time HH:MM`. Scheduling stops with the server, not the browser tab. Startup does not catch up missed checks; run the refresh command above for the initial page.
 
-每日检查不等于每日发布新观测。任一劳动数据源抓取或校验失败时保留整个旧页面，页面显示抓取时间、各序列观测年份/月及状态标记。缺失不补值，断年和官方序列断点不连线；修订随下一次成功快照更新。原始响应按 SHA-256 归档至 `data/raw/labor/`，页面可查校验记录。不改动 SVU 资产篮子。ILOSTAT 原始调查名称和统计备注保留英文，并明确标注为原文。
+Daily checks do not imply daily observations. Any labour-source retrieval or validation failure retains the entire previous page. Retrieval time, observation years/months and official status flags remain visible. Missing values are not filled; gaps and official breaks are not connected on charts. Successful snapshots incorporate revisions. Raw responses are archived by SHA-256 under `data/raw/labor/`, with integrity records on the page. The SVU asset basket is unaffected. Official survey names and statistical notes remain in their original English and are labelled as such.
 
-官方接口与口径：[ILOSTAT](https://ilostat.ilo.org/data/bulk/)、[BLS CES](https://www.bls.gov/opub/hom/ces/concepts.htm)。国家中文/英文展示名称来自 Unicode CLDR 地区代码与运行时 Intl.DisplayNames；官方英文名称保留在数据载荷中。BLS 未注册接口调用限额仍适用。
+Official interfaces and definitions: [ILOSTAT](https://ilostat.ilo.org/data/bulk/) and [BLS CES](https://www.bls.gov/opub/hom/ces/concepts.htm). Localized country display names use Unicode CLDR territory codes and runtime Intl.DisplayNames; official English names remain in the payload. BLS unregistered API limits apply.
 
 
-### 工资参考单位与统一操作
+### Reference-unit earnings and shared controls
 
-劳动页沿用主页的侧栏、日期输入/滑块、近 1/3/5 年、全选/清空/恢复默认和中英文切换；图表支持指针与键盘方向键查看观测值。主页及各领域模块提供劳动页入口，劳动页可返回同一已发布快照的主页与各领域。
+The labour page uses the same sidebar, date inputs/sliders, 1/3/5-year shortcuts, select-all/clear/reset controls and language preference as the main dashboard. Charts support pointer inspection and arrow keys. Main/domain pages link to labour; labour links back to the same published generation.
 
-工资同时展示原币金额、货币类别参考单位金额和 SVU 参考单位金额。两种参考单位均约定在完整篮子首日对应 1 美元：前者的美元价格随后跟随货币类别等权几何趋势，后者跟随全篮子类别平衡 ICATI-CB。这是劳动页的研究计价尺度，不修改 `SVU = 100`，也不是官方汇率或实际购买力。
+Earnings are shown in original currency, currency-category reference units and SVU reference units. Both units cost USD 1 on the first complete-basket date. Subsequent USD prices follow the equal-weight geometric currency trend and full-basket category-balanced ICATI-CB, respectively. This labour-view pricing convention does not redefine `SVU = 100`, establish official exchange rates or measure real purchasing power.
 
-年度工资只使用 ILOSTAT 同国家、同调查、同年份的美元工资值；美国月度工资直接使用 BLS 美元值。换算时除以同期参考单位美元价格的算术平均值。仅使用当前发布快照的完整篮子实际共同日期，不填充；月度须已结束、有至少 10 个观测日、首个观测日在 10 日以内且末个在 20 日及以后，年度须 12 个月均满足要求。缺少官方美元值或合格期间时显示暂无换算。窗口变化只重设趋势图的起点 100，不改变参考单位的固定计价尺度。工时不作货币换算。
+Annual conversion uses ILOSTAT USD earnings matched by country, survey and year; US monthly conversion uses BLS USD earnings. Divide earnings by the arithmetic period-average USD price of the reference unit, using actual complete-basket dates from the published snapshot without filling gaps. Eligible months must be closed, contain at least 10 observations, start by day 10 and end on/after day 20; eligible years require all 12 months. Missing USD values or eligible periods produce an explicit unavailable state. Window changes rebase chart trends to 100 without changing the fixed unit pricing scale. Hours are not converted into monetary units.
 
-劳动更新成功后，若市场数据也成功发布，自动任务会使用新市场快照再次计算换算结果，无需重复下载劳动数据。各次换算保留篮子版本、快照标识、基期和源页面 SHA-256。
+After successful labour and market updates, the scheduler recalculates conversions against the newly published market snapshot without downloading labour data again. Benchmark version, generation, base date and source-page SHA-256 remain traceable.
 
-劳动页提供可搜索的国家复选框，可同时比较多国，并分别选择调查来源。原币工资以各国窗口首期 100 展示趋势；货币类别和 SVU 参考单位展示同尺度金额。固定本地首页为 `reports/index.html`，每次成功发布自动更新；旧日期目录保留历史快照。
+The labour page supports searchable country checkboxes and separate survey choices. Local-currency earnings compare trends rebased to 100 per country; currency-category and SVU reference units compare amounts on a shared scale. Use `reports/index.html` as the stable local home page; successful publication updates it while dated generations remain historical snapshots.
 
-多国对比集中在一张主图，每个国家一条曲线；通过“对比基准”切换原币归一化趋势、货币类别参考单位或 SVU 参考单位。单国图表与记录默认折叠，可展开“单国详情”查看。
+The multi-country view uses one main chart with one line per country. The comparison-basis selector switches between normalized original-currency trends, currency-category reference units and SVU reference units. Single-country charts and records are collapsed by default under Single-country details.
